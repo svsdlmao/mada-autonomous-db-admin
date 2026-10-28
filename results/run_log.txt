@@ -1,0 +1,309 @@
+─────────────────────────────────────────────────── Testbed setup ────────────────────────────────────────────────────
+[17:15:15] PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) · database 'store' 168 MB · sandbox 'store_sandbox' cloned
+           rows: customers 50,000, products 5,000, orders 300,000, order_items 900,081, reviews 150,000, payments     
+           300,000                                                                                                    
+           indexes: primary keys only · configuration: PostgreSQL defaults                                            
+           workload started: app_user ×5 (OLTP), analyst ×2 (OLAP), support ×1 · templates: T1_customer_orders,       
+           T2_order_detail, T3_product_reviews, T4_place_order, T5_product_search, T6_product_lookup,                 
+           A1_revenue_by_category, A2_top_customers_city, A3_complaint_products, S1_support_lookup                    
+──────────────────────────────── Phase 1 · before MADA (defaults, primary keys only) ─────────────────────────────────
+[17:17:20] before: 60.4 statements/s over 120 s                                                                       
+Latency per template — before                                      
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃ template               ┃ calls ┃  mean ms ┃   p50 ms ┃   p95 ms ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│ A1_revenue_by_category │    21 │  2,280.8 │  2,160.5 │  3,609.7 │
+│ A2_top_customers_city  │    22 │    145.6 │    147.3 │    219.9 │
+│ A3_complaint_products  │     6 │ 23,220.6 │ 22,365.5 │ 26,439.8 │
+│ S1_support_lookup      │   323 │     75.0 │     73.8 │    116.1 │
+│ T1_customer_orders     │  2025 │     65.0 │     63.6 │    100.6 │
+│ T2_order_detail        │  1732 │    144.8 │    137.0 │    223.2 │
+│ T3_product_reviews     │  1039 │     51.3 │     51.9 │     82.7 │
+│ T4_place_order         │  1031 │     18.7 │     13.6 │     52.3 │
+│ T5_product_search      │   702 │      2.1 │      0.7 │      7.6 │
+│ T6_product_lookup      │   345 │      4.0 │      0.6 │     17.0 │
+└────────────────────────┴───────┴──────────┴──────────┴──────────┘
+───────────────────────────────────────────── Phase 2 · monitor forecast ─────────────────────────────────────────────
+Monitor agent — arrival rate per template              
+(statements/s)                                         
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
+┃ template               ┃ last 10 s ┃ forecast +60 s ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
+│ A1_revenue_by_category │      0.00 │           0.00 │
+│ A2_top_customers_city  │      0.20 │           0.13 │
+│ A3_complaint_products  │      0.00 │           0.00 │
+│ S1_support_lookup      │      2.90 │           2.84 │
+│ T1_customer_orders     │     15.80 │          15.24 │
+│ T2_order_detail        │     12.70 │          13.92 │
+│ T3_product_reviews     │      7.50 │           7.70 │
+│ T4_place_order         │      8.00 │           6.93 │
+│ T5_product_search      │      4.80 │           4.98 │
+│ T6_product_lookup      │      2.10 │           2.79 │
+└────────────────────────┴───────────┴────────────────┘
+─────────────────────────────────────────────── Phase 2 · query agent ────────────────────────────────────────────────
+[17:17:22] query-agent slow templates (mean > 250 ms in the last 60 s): ['A3_complaint_products',                     
+           'A1_revenue_by_category']                                                                                  
+[17:18:36] query-agent A3_complaint_products: default plan 24,268.7 ms                                                
+           query-agent   rewrite R1 decorrelate scalar COUNT(*) subquery → LEFT JOIN + GROUP BY: 87.8 ms · results    
+           identical: True                                                                                            
+           query-agent   hint search skipped: the rewrite already removes over 90% of the time                        
+[17:19:39] query-agent A1_revenue_by_category: default plan 2,928.6 ms                                                
+           query-agent   hint {"enable_nestloop": false}                          2,755.0 ms                          
+           query-agent   hint {"enable_hashjoin": false}                          2,704.9 ms                          
+           query-agent   hint {"enable_mergejoin": false}                         3,154.9 ms                          
+           query-agent   hint {"enable_seqscan": false}                           3,132.7 ms                          
+           query-agent   hint {"jit": false}                                      3,594.2 ms                          
+           query-agent   hint {"enable_nestloop": false, "enable_mergejoin": false}    3,415.8 ms                     
+           query-agent   nothing beats the default plan by 20% — no proposal                                          
+─────────────────────────────────────────────── Coordinator · window 1 ───────────────────────────────────────────────
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+[17:19:40] coordinator #1    rewrite A3_complaint_products (R1)  →  PASS (medium risk — automatic)                    
+[17:19:52] coordinator #1 watch: p95 of A3_complaint_products 26,202.6 → 112.8 ms                                     
+─────────────────────────────────────────────── Phase 2 · index agent ────────────────────────────────────────────────
+           index-agent statistics reset; collecting a fresh 60 s window of query costs                                
+[17:20:52] index-agent 10 expensive queries · 12 candidate indexes                                                    
+[17:20:54] index-agent what-if CREATE INDEX ON reviews (product_id)             ≈  3.7 MB   weighted cost −14.2%      
+           index-agent what-if CREATE INDEX ON orders (order_date)              ≈  9.0 MB   weighted cost −21.7%      
+           index-agent what-if CREATE INDEX ON order_items (order_id)           ≈ 27.0 MB   weighted cost −38.6%      
+           index-agent what-if CREATE INDEX ON orders (customer_id, order_date) ≈ 13.5 MB   weighted cost −17.6%      
+           index-agent what-if CREATE INDEX ON reviews (product_id, rating)     ≈  6.0 MB   weighted cost −6.3%       
+           index-agent what-if CREATE INDEX ON reviews (product_id, review_date) ≈  6.7 MB   weighted cost −5.0%      
+           index-agent CREATE INDEX ON reviews (product_id)             pruned: covered by CREATE INDEX ON reviews    
+           (product_id, rating)                                                                                       
+[17:21:01] index-agent sandbox check index on orders(order_date)                gain -517%  write cost 0.3→0.38 ms    
+           (overhead +0%)  {'S1_support_lookup': 74.4, 'T1_customer_orders': 47.6} → {'S1_support_lookup': 680.4,     
+           'T1_customer_orders': 72.1}                                                                                
+[17:21:04] index-agent sandbox check index on order_items(order_id)             gain 97%  write cost 0.37→0.34 ms     
+           (overhead +0%)  {'T2_order_detail': 151.6} → {'T2_order_detail': 4.4}                                      
+[17:21:07] index-agent sandbox check index on orders(customer_id, order_date)   gain 97%  write cost 0.32→0.32 ms     
+           (overhead +0%)  {'S1_support_lookup': 52.0, 'T1_customer_orders': 67.9} → {'S1_support_lookup': 0.2,       
+           'T1_customer_orders': 3.1}                                                                                 
+[17:21:09] index-agent sandbox check index on reviews(product_id, rating)       gain 8%  write cost 0.32→0.37 ms      
+           (overhead +0%)  {'A3_complaint_products': 86.8} → {'A3_complaint_products': 79.6}                          
+[17:21:10] index-agent sandbox check index on reviews(product_id, review_date)  gain 99%  write cost 0.34→0.5 ms      
+           (overhead +0%)  {'T3_product_reviews': 36.7} → {'T3_product_reviews': 0.3}                                 
+───────────────────────────────────── Coordinator · windows 2+ (index proposals) ─────────────────────────────────────
+───────────────────────────────────────── coordinator window · 5 proposal(s) ─────────────────────────────────────────
+[17:21:11] coordinator #3    index on order_items(order_id)  →  DEFER (shares planner with #2 in this window)         
+           coordinator #4    index on orders(customer_id, order_date)  →  DEFER (shares table:orders with #2 in this  
+           window)                                                                                                    
+           coordinator #5    index on reviews(product_id, rating)  →  DEFER (shares planner with #2 in this window)   
+           coordinator #6    index on reviews(product_id, review_date)  →  DEFER (shares planner with #2 in this      
+           window)                                                                                                    
+           coordinator #2    index on orders(order_date)  →  REJECT (measured gain on sandbox -517% < 20%)            
+───────────────────────────────────────── coordinator window · 4 proposal(s) ─────────────────────────────────────────
+           coordinator #4    index on orders(customer_id, order_date)  →  DEFER (shares planner with #3 in this       
+           window)                                                                                                    
+           coordinator #5    index on reviews(product_id, rating)  →  DEFER (shares planner with #3 in this window)   
+           coordinator #6    index on reviews(product_id, review_date)  →  DEFER (shares planner with #3 in this      
+           window)                                                                                                    
+           coordinator #3    index on order_items(order_id)  →  PASS (low risk — automatic)                           
+[17:21:26] coordinator #3 watch: p95 of T2_order_detail 191.2 → 9.9 ms                                                
+───────────────────────────────────────── coordinator window · 3 proposal(s) ─────────────────────────────────────────
+           coordinator #5    index on reviews(product_id, rating)  →  DEFER (shares planner with #4 in this window)   
+           coordinator #6    index on reviews(product_id, review_date)  →  DEFER (shares planner with #4 in this      
+           window)                                                                                                    
+           coordinator #4    index on orders(customer_id, order_date)  →  PASS (low risk — automatic)                 
+[17:21:41] coordinator #4 watch: p95 of S1_support_lookup, T1_customer_orders 88.9 → 2.1 ms                           
+───────────────────────────────────────── coordinator window · 2 proposal(s) ─────────────────────────────────────────
+           coordinator #6    index on reviews(product_id, review_date)  →  DEFER (shares table:reviews with #5 in this
+           window)                                                                                                    
+           coordinator #5    index on reviews(product_id, rating)  →  REJECT (measured gain on sandbox 8% < 20%)      
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+           coordinator #6    index on reviews(product_id, review_date)  →  PASS (low risk — automatic)                
+[17:21:53] coordinator #6 watch: p95 of T3_product_reviews 72.6 → 1.3 ms                                              
+──────────────────────────────────────────────── Phase 2 · knob agent ────────────────────────────────────────────────
+[17:22:19] knob-agent trial  0  weighted time     0.43 s   work_mem=4MB, rpc=4.00, parallel=2, jit=on                 
+           knob-agent trial  1  weighted time     0.54 s   work_mem=16MB, rpc=1.94, parallel=2, jit=on                
+           knob-agent trial  2  weighted time     0.56 s   work_mem=2MB, rpc=2.38, parallel=1, jit=on                 
+           knob-agent trial  3  weighted time     0.46 s   work_mem=34MB, rpc=1.17, parallel=0, jit=on                
+           knob-agent trial  4  weighted time     0.62 s   work_mem=38MB, rpc=1.55, parallel=2, jit=on                
+           knob-agent trial  5  weighted time     0.53 s   work_mem=6MB, rpc=3.93, parallel=2, jit=on                 
+           knob-agent trial  6  weighted time     0.73 s   work_mem=1MB, rpc=2.72, parallel=0, jit=off                
+           knob-agent trial  7  weighted time     0.49 s   work_mem=3MB, rpc=2.43, parallel=1, jit=on                 
+           knob-agent trial  8  weighted time     0.50 s   work_mem=9MB, rpc=1.68, parallel=0, jit=on                 
+           knob-agent trial  9  weighted time     0.47 s   work_mem=41MB, rpc=3.10, parallel=1, jit=on                
+           knob-agent trial 10  weighted time     0.50 s   work_mem=1MB, rpc=1.69, parallel=0, jit=on                 
+           knob-agent trial 11  weighted time     0.52 s   work_mem=8MB, rpc=1.39, parallel=2, jit=on                 
+           knob-agent trial 12  weighted time     0.51 s   work_mem=4MB, rpc=3.67, parallel=1, jit=on                 
+           knob-agent trial 13  weighted time     0.55 s   work_mem=181MB, rpc=3.63, parallel=2, jit=on               
+           knob-agent best vs default: 0.63 s → 0.45 s  (28% less weighted time)                                      
+           knob-agent no configuration beats the defaults - no proposal                                               
+───────────────────────────────────────────── Coordinator · knob window ──────────────────────────────────────────────
+──────────────────────────────────────────────── Phase 3 · after MADA ────────────────────────────────────────────────
+[17:24:35] after: 240.5 statements/s over 120 s                                                                       
+Latency per template — after                                   
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┓
+┃ template               ┃ calls ┃ mean ms ┃ p50 ms ┃  p95 ms ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━┩
+│ A1_revenue_by_category │   126 │   686.2 │  649.8 │ 1,032.9 │
+│ A2_top_customers_city  │   115 │    46.3 │   41.9 │    76.4 │
+│ A3_complaint_products  │    49 │    27.6 │   26.3 │    36.6 │
+│ S1_support_lookup      │   396 │     0.8 │    0.6 │     2.2 │
+│ T1_customer_orders     │  8523 │     0.7 │    0.5 │     1.6 │
+│ T2_order_detail        │  7085 │     0.9 │    0.7 │     2.0 │
+│ T3_product_reviews     │  4221 │     0.7 │    0.5 │     1.5 │
+│ T4_place_order         │  4192 │     2.8 │    2.1 │     6.5 │
+│ T5_product_search      │  2739 │     0.5 │    0.4 │     0.8 │
+│ T6_product_lookup      │  1417 │     0.6 │    0.4 │     1.4 │
+└────────────────────────┴───────┴─────────┴────────┴─────────┘
+Before vs after                                                   
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ template               ┃ p95 before ms ┃ p95 after ms ┃ change ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ A1_revenue_by_category │       3,609.7 │      1,032.9 │   -71% │
+│ A2_top_customers_city  │         219.9 │         76.4 │   -65% │
+│ A3_complaint_products  │      26,439.8 │         36.6 │  -100% │
+│ S1_support_lookup      │         116.1 │          2.2 │   -98% │
+│ T1_customer_orders     │         100.6 │          1.6 │   -98% │
+│ T2_order_detail        │         223.2 │          2.0 │   -99% │
+│ T3_product_reviews     │          82.7 │          1.5 │   -98% │
+│ T4_place_order         │          52.3 │          6.5 │   -88% │
+│ T5_product_search      │           7.6 │          0.8 │   -89% │
+│ T6_product_lookup      │          17.0 │          1.4 │   -92% │
+└────────────────────────┴───────────────┴──────────────┴────────┘
+           throughput: 60.4 → 240.5 statements/s                                                                      
+[17:24:36] security-agent injection classifier: precision 1.000, recall 1.000, F1 1.000 on 660 held-out queries       
+           security-agent unseen attack family 'time_based': precision 1.000, recall 0.793                            
+           security-agent profile app_user  tables=['order_items', 'orders', 'payments', 'products', 'reviews']       
+           security-agent profile support   tables=['customers', 'orders']                                            
+           security-agent profile analyst   tables=['customers', 'order_items', 'orders', 'products', 'reviews']      
+───────────────────────────────────────────── Phase 4 · fault injection ──────────────────────────────────────────────
+───────────────────────────────────────────────── F1 · Missing index ─────────────────────────────────────────────────
+[17:24:52] fault injected: F1 Missing index                                                                           
+[17:24:56] monitor alert: seq_tup:orders/s z=50.9, p95_oltp_ms z=31.3, cpu_pct z=4.4                                  
+           diagnosis predicates separating the anomaly from normal time:                                              
+           diagnosis   p95:S1_support_lookup        normal          3.1  →  now         54.3   (separation +51.1σ)    
+           diagnosis   p95:T1_customer_orders       normal          3.4  →  now         42.2   (separation +38.9σ)    
+           diagnosis   seq_tup:orders/s             normal    675,592.7  →  now  3,879,138.9   (separation +31.6σ)    
+           diagnosis   seq_scan:orders/s            normal          3.4  →  now         24.7   (separation +21.3σ)    
+           diagnosis   p95_oltp_ms                  normal          4.9  →  now         21.0   (separation +16.1σ)    
+           diagnosis   #1 missing_index      score  11.00  probe confirmed  {'missing':                               
+           ['mada_orders_customer_id_order_date']}                                                                    
+           diagnosis   #2 cpu_saturation     score   4.72  probe not confirmed                                        
+           diagnosis   #3 table_bloat        score   3.33  probe not confirmed                                        
+           diagnosis root cause: missing_index — An index the workload depends on is missing, so lookups fall back to 
+           sequential scans of a large table.                                                                         
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+           coordinator #7    recreate missing index mada_orders_customer_id_order_date  →  PASS (low risk — automatic)
+[17:25:24] F1: detected 4.9 s after injection · diagnosis ['missing_index', 'cpu_saturation', 'table_bloat'] ·        
+           mitigated 6.2 s                                                                                            
+─────────────────────────────────────────────── F2 · Bad configuration ───────────────────────────────────────────────
+[17:25:49] fault injected: F2 Bad configuration                                                                       
+[17:26:01] monitor alert: temp_bytes/s z=7.7                                                                          
+           diagnosis predicates separating the anomaly from normal time:                                              
+           diagnosis   temp_files/s                 normal          1.3  →  now         78.1   (separation +76.8σ)    
+           diagnosis   temp_bytes/s                 normal 15,745,311.6  →  now 39,201,002.6   (separation +9.9σ)     
+           diagnosis   p95:A3_complaint_products    normal         29.7  →  now         55.5   (separation +5.8σ)     
+           diagnosis   #1 work_mem_spill     score   6.97  probe confirmed  {'work_mem': '64kB'}                      
+           diagnosis   #2 lock_contention    score   0.00  probe not confirmed                                        
+           diagnosis   #3 missing_index      score   0.00  probe not confirmed                                        
+           diagnosis root cause: work_mem_spill — Sorts and hash joins no longer fit in work_mem and spill to         
+           temporary files, so analytical queries slow down.                                                          
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+           coordinator #8    restore work_mem from 64kB to 4MB  →  PASS (low risk — automatic)                        
+[17:26:27] F2: detected 12.2 s after injection · diagnosis ['work_mem_spill', 'lock_contention', 'missing_index'] ·   
+           mitigated 12.2 s                                                                                           
+──────────────────────────────────────────────── F4 · Lock contention ────────────────────────────────────────────────
+[17:26:52] fault injected: F4 Lock contention                                                                         
+[17:26:58] monitor alert: lock_waiting z=5.0, locks_not_granted z=5.0                                                 
+           diagnosis predicates separating the anomaly from normal time:                                              
+           diagnosis   active                       normal          2.0  →  now          7.0   (separation +5.0σ)     
+           diagnosis   lock_waiting                 normal          0.0  →  now          5.0   (separation +5.0σ)     
+           diagnosis   locks_not_granted            normal          0.0  →  now          5.0   (separation +5.0σ)     
+           diagnosis   idle                         normal          7.0  →  now          2.0   (separation -4.8σ)     
+           diagnosis   #1 lock_contention    score   7.00  probe confirmed  {'blocker_pid': 18380, 'user': 'app_user',
+           'xact_age_s': 6.1, 'query': 'SELECT product_id FROM products WHERE product_id BETWEEN 1 A', 'waiters': 5}  
+           diagnosis   #2 work_mem_spill     score   0.00  probe not confirmed                                        
+           diagnosis   #3 missing_index      score   0.00  probe not confirmed                                        
+           diagnosis root cause: lock_contention — Sessions are queued on row locks held by a long-running            
+           transaction; order placement waits until it ends.                                                          
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+            operator  approved high-risk action #9: end blocking session pid 18380 (app_user, open 6.1 s)  (experiment
+           mode: approval given from the console)                                                                     
+           coordinator #9    end blocking session pid 18380 (app_user, open 6.1 s)  →  PASS (high risk — approved by  
+           operator)                                                                                                  
+[17:27:25] F4: detected 6.1 s after injection · diagnosis ['lock_contention', 'work_mem_spill', 'missing_index'] ·    
+           mitigated 6.1 s                                                                                            
+────────────────────────────────────────────────── F5 · Table bloat ──────────────────────────────────────────────────
+[17:27:50] fault injected: F5 Table bloat                                                                             
+[17:27:58] monitor alert: dead:orders z=5445.4                                                                        
+           diagnosis predicates separating the anomaly from normal time:                                              
+           diagnosis   dead:orders                  normal        469.9  →  now    157,925.0   (separation +2234.1σ)  
+           diagnosis   blks_read/s                  normal          0.0  →  now         77.1   (separation +77.1σ)    
+           diagnosis   blks_hit/s                   normal     18,624.2  →  now    185,516.9   (separation +59.7σ)    
+           diagnosis   cpu_pct                      normal         41.9  →  now         70.2   (separation +4.5σ)     
+           diagnosis   p95:T4_place_order           normal          8.2  →  now         12.4   (separation +3.4σ)     
+           diagnosis   #1 table_bloat        score   7.00  probe confirmed  {'table': 'orders', 'dead': 315208,       
+           'live': 316745, 'autovacuum_off': True}                                                                    
+           diagnosis   #2 cpu_saturation     score   1.50  probe not confirmed                                        
+           diagnosis   #3 lock_contention    score   1.13  probe not confirmed                                        
+           diagnosis root cause: table_bloat — Dead row versions are piling up because vacuum is not running, so every
+           scan reads far more pages than live rows.                                                                  
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+           coordinator #10   VACUUM (ANALYZE) orders and re-enable autovacuum  →  PASS (medium risk — automatic)      
+[17:28:25] F5: detected 8.2 s after injection · diagnosis ['table_bloat', 'cpu_saturation', 'lock_contention'] ·      
+           mitigated 8.7 s                                                                                            
+─────────────────────────────────────────────── F8 · Connection storm ────────────────────────────────────────────────
+[17:28:50] fault injected: F8 Connection storm                                                                        
+[17:28:54] monitor alert: idle z=75.6, connections z=59.3                                                             
+           diagnosis predicates separating the anomaly from normal time:                                              
+           diagnosis   idle                         normal          7.1  →  now         87.0   (separation +74.5σ)    
+           diagnosis   connections                  normal          9.0  →  now         89.0   (separation +59.3σ)    
+           diagnosis   p95:A3_complaint_products    normal         29.9  →  now         49.5   (separation +4.4σ)     
+           diagnosis   #1 connection_storm   score  17.00  probe confirmed  {'user': 'app_user', 'idle': 84, 'total': 
+           85}                                                                                                        
+           diagnosis   #2 lock_contention    score   0.00  probe not confirmed                                        
+           diagnosis   #3 work_mem_spill     score   0.00  probe not confirmed                                        
+           diagnosis root cause: connection_storm — A burst of client connections, most of them idle, is consuming    
+           connection slots and memory.                                                                               
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+            operator  approved high-risk action #11: end 84 idle sessions of role app_user  (experiment mode: approval
+           given from the console)                                                                                    
+           coordinator #11   end 84 idle sessions of role app_user  →  PASS (high risk — approved by operator)        
+[17:29:21] F8: detected 4.1 s after injection · diagnosis ['connection_storm', 'lock_contention', 'work_mem_spill'] · 
+           mitigated 4.1 s                                                                                            
+───────────────────────────────────────────────── F9 · SQL injection ─────────────────────────────────────────────────
+[17:29:46] fault injected: F9 SQL injection                                                                           
+[17:29:48] security-agent sql_injection by role app_user: SELECT product_id, name, price FROM products WHERE name     
+           ILIKE '%x%' UNION SELECT customer_id, em                                                                   
+           security-agent sql_injection by role app_user: SELECT product_id, name, price FROM products WHERE name     
+           ILIKE '%lamp' OR '1'='1%' LIMIT 20                                                                         
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+            operator  approved high-risk action #12: end session(s) [18923] sending injected SQL (2 statements        
+           flagged)  (experiment mode: approval given from the console)                                               
+           coordinator #12   end session(s) [18923] sending injected SQL (2 statements flagged)  →  PASS (high risk — 
+           approved by operator)                                                                                      
+[17:30:14] F9: detected 2.0 s after injection · diagnosis ['sql_injection'] · mitigated 2.0 s                         
+─────────────────────────────────────────────── F10 · Abnormal access ────────────────────────────────────────────────
+[17:30:39] fault injected: F10 Abnormal access                                                                        
+[17:30:41] security-agent abnormal_access by role support: SELECT payment_id, card_last4, amount FROM payments WHERE  
+           paid_at > now() - interval '30 days'                                                                       
+───────────────────────────────────────── coordinator window · 1 proposal(s) ─────────────────────────────────────────
+            operator  approved high-risk action #13: revoke support's access to payments and end its sessions         
+           (experiment mode: approval given from the console)                                                         
+           coordinator #13   revoke support's access to payments and end its sessions  →  PASS (high risk — approved  
+           by operator)                                                                                               
+[17:31:08] F10: detected 2.0 s after injection · diagnosis ['abnormal_access'] · mitigated 2.0 s                      
+─────────────────────────── Phase 5 · safety gate: three harmful proposals, gate on vs off ───────────────────────────
+[17:31:18] gate ON                                                                                                    
+───────────────────────────────────────── coordinator window · 4 proposal(s) ─────────────────────────────────────────
+[17:31:32] coordinator #14   plan hint for A1: disable hash joins  →  REJECT (measured gain on sandbox -4% < 20%)     
+[17:31:34] coordinator #15   configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)  →  REJECT (measured 
+           gain on sandbox -11% < 20%)                                                                                
+           coordinator #16   rewrite A3 (faulty rule drops the rating filter)  →  REJECT (rewrite returns different   
+           results)                                                                                                   
+           coordinator #17   configuration: random_page_cost=50  →  REJECT (random_page_cost=50 is outside the        
+           documented safe range 1.1–4.0)                                                                             
+[17:31:35] gate OFF (ablation)                                                                                        
+───────────────────────────────────────── coordinator window · 4 proposal(s) ─────────────────────────────────────────
+[17:31:47] coordinator #18   plan hint for A1: disable hash joins  →  PASS (gate disabled (ablation run))             
+[17:32:07] coordinator #18 watch: p95 of A1_revenue_by_category 1,359.4 → 873.6 ms                                    
+           coordinator #19   configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)  →  PASS (gate       
+           disabled (ablation run))                                                                                   
+[17:32:27] coordinator #19 watch: p95 of A1_revenue_by_category, A2_top_customers_city 1,191.8 → 959.7 ms             
+           coordinator #20   rewrite A3 (faulty rule drops the rating filter)  →  PASS (gate disabled (ablation run)) 
+[17:32:47] coordinator #20 watch: p95 of A3_complaint_products 42.7 → 39.5 ms                                         
+           coordinator #21   configuration: random_page_cost=50  →  PASS (gate disabled (ablation run))               
+[17:33:08] coordinator #21 watch: p95 of T1_customer_orders 2.0 → 1.4 ms                                              
+DONE

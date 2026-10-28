@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MADA · Live Demo</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/chart.umd.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo">M</div>
+    <div>
+      <div class="name">MADA <span>Multi-Agent Database Administrator</span></div>
+      <div class="sub">Shauryaveer Singh Dabas · 24BCE0416 · BCSE302L Database Systems</div>
+    </div>
+  </div>
+  <div class="status">
+    <span id="phase" class="pill">starting</span>
+    <span id="detail" class="detail">connecting…</span>
+  </div>
+  <div id="gatePill" class="pill gate on">Safety gate ON</div>
+</header>
+
+<main>
+  <section class="kpis">
+    <div class="kpi"><div class="k-label">Throughput</div><div class="k-val" id="kTps">–</div><div class="k-sub" id="kTpsSub">statements / s</div></div>
+    <div class="kpi"><div class="k-label">Web pages · p95</div><div class="k-val" id="kOltp">–</div><div class="k-sub">order, review, search, support queries</div></div>
+    <div class="kpi"><div class="k-label">Reports · p95</div><div class="k-val" id="kOlap">–</div><div class="k-sub">revenue, top customers, complaints</div></div>
+    <div class="kpi"><div class="k-label">Changes applied by MADA</div><div class="k-val" id="kApplied">0</div><div class="k-sub" id="kAppliedSub">0 rejected by the gate</div></div>
+    <div class="kpi"><div class="k-label">Incidents handled</div><div class="k-val" id="kInc">0</div><div class="k-sub" id="kIncSub">inject a fault to test</div></div>
+  </section>
+
+  <section class="agents" id="agents"></section>
+
+  <section class="grid2">
+    <div class="card controls">
+      <h2>Control panel</h2>
+      <div class="group">
+        <div class="g-title">1 · Tuning</div>
+        <button id="btnTune" class="primary">Run tuning cycle</button>
+        <button id="btnReset" class="ghost">Reset to untuned</button>
+        <p class="hint">Query → index → knob agents, each through the coordinator and safety gate. Takes about 5 minutes.</p>
+      </div>
+      <div class="group">
+        <div class="g-title">2 · Inject a fault</div>
+        <div class="faults" id="faults"></div>
+        <button id="btnEndFault" class="ghost small">End active fault</button>
+      </div>
+      <div class="group">
+        <div class="g-title">3 · Safety gate</div>
+        <label class="switch"><input type="checkbox" id="gateToggle" checked><span></span> Gate enabled</label>
+        <button id="btnHarmful" class="warn">Send 4 harmful proposals</button>
+        <button id="btnUndo" class="ghost small">Undo harmful changes</button>
+      </div>
+      <div class="group">
+        <div class="g-title">4 · Human approval</div>
+        <label class="switch"><input type="checkbox" id="autoToggle"><span></span> Auto-approve high-risk actions</label>
+        <p class="hint">Off: ending sessions or revoking access waits for you to approve on screen.</p>
+      </div>
+    </div>
+    <div class="card charts">
+      <div class="chart-head"><h2>Live latency (95th percentile, last 5 minutes)</h2></div>
+      <div class="chart-box"><canvas id="latChart"></canvas></div>
+      <div class="chart-head"><h2>Throughput and connections</h2></div>
+      <div class="chart-box small"><canvas id="tpsChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Query templates · p95 before tuning vs now</h2>
+      <table class="tbl" id="tplTable"><thead><tr><th>Template</th><th class="r">Before</th><th class="r">Now</th><th class="r">Change</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Coordinator and safety-gate decisions</h2>
+      <div class="scroll"><table class="tbl" id="decTable"><thead><tr><th>#</th><th>Proposal</th><th>Agent</th><th>Decision</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Incidents</h2>
+      <table class="tbl" id="incTable"><thead><tr><th>Fault</th><th class="r">Detected</th><th>Cause found</th><th>Fix</th><th class="r">Fixed</th></tr></thead><tbody></tbody></table>
+      <h2 class="mt">Database state</h2>
+      <div id="dbState" class="dbstate"></div>
+    </div>
+    <div class="card">
+      <h2>Agent log</h2>
+      <pre id="log" class="log"></pre>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="m-tag">Human approval needed</div>
+    <h3 id="mTitle"></h3>
+    <div id="mMeta" class="m-meta"></div>
+    <pre id="mAction" class="m-action"></pre>
+    <div class="m-btns"><button id="mReject" class="ghost">Reject</button><button id="mApprove" class="primary">Approve</button></div>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1721 @@
+{
+ "setup": {
+  "counts": {
+   "customers": 50000,
+   "products": 5000,
+   "orders": 300000,
+   "order_items": 900081,
+   "reviews": 150000,
+   "payments": 300000
+  },
+  "size": "168 MB",
+  "settings": {
+   "effective_cache_size": "5242888kB",
+   "jit": "on",
+   "max_parallel_workers_per_gather": "2",
+   "random_page_cost": "4",
+   "server_version": "16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+   "shared_buffers": "327688kB",
+   "work_mem": "4096kB"
+  }
+ },
+ "before": {
+  "stats": {
+   "T1_customer_orders": {
+    "n": 2025,
+    "mean": 64.99757825592418,
+    "p50": 63.562870025634766,
+    "p95": 100.62718391418457
+   },
+   "S1_support_lookup": {
+    "n": 323,
+    "mean": 74.98861983095529,
+    "p50": 73.84943962097168,
+    "p95": 116.10698699951172
+   },
+   "T3_product_reviews": {
+    "n": 1039,
+    "mean": 51.2841475250861,
+    "p50": 51.90896987915039,
+    "p95": 82.69262313842773
+   },
+   "T4_place_order": {
+    "n": 1031,
+    "mean": 18.730265324145815,
+    "p50": 13.591289520263672,
+    "p95": 52.26731300354004
+   },
+   "T2_order_detail": {
+    "n": 1732,
+    "mean": 144.75066736168455,
+    "p50": 137.01415061950684,
+    "p95": 223.22893142700195
+   },
+   "T5_product_search": {
+    "n": 702,
+    "mean": 2.1192956174540725,
+    "p50": 0.6635189056396484,
+    "p95": 7.634401321411133
+   },
+   "T6_product_lookup": {
+    "n": 345,
+    "mean": 4.005447332409845,
+    "p50": 0.5519390106201172,
+    "p95": 16.98446273803711
+   },
+   "A2_top_customers_city": {
+    "n": 22,
+    "mean": 145.6345103003762,
+    "p50": 147.34363555908203,
+    "p95": 219.85268592834473
+   },
+   "A1_revenue_by_category": {
+    "n": 21,
+    "mean": 2280.8370476677305,
+    "p50": 2160.4745388031006,
+    "p95": 3609.726905822754
+   },
+   "A3_complaint_products": {
+    "n": 6,
+    "mean": 23220.622777938843,
+    "p50": 22365.50807952881,
+    "p95": 26439.821243286133
+   }
+  },
+  "tps": 60.38333333333333
+ },
+ "forecast": {
+  "A1_revenue_by_category": {
+   "now": 0.0,
+   "forecast": 0.0
+  },
+  "A2_top_customers_city": {
+   "now": 0.2,
+   "forecast": 0.12692307692307697
+  },
+  "A3_complaint_products": {
+   "now": 0.0,
+   "forecast": 0.0
+  },
+  "S1_support_lookup": {
+   "now": 2.9,
+   "forecast": 2.8358974358974356
+  },
+  "T1_customer_orders": {
+   "now": 15.8,
+   "forecast": 15.237645687645692
+  },
+  "T2_order_detail": {
+   "now": 12.7,
+   "forecast": 13.924009324009322
+  },
+  "T3_product_reviews": {
+   "now": 7.5,
+   "forecast": 7.702680652680652
+  },
+  "T4_place_order": {
+   "now": 8.0,
+   "forecast": 6.9289044289044295
+  },
+  "T5_product_search": {
+   "now": 4.8,
+   "forecast": 4.976689976689976
+  },
+  "T6_product_lookup": {
+   "now": 2.1,
+   "forecast": 2.7896270396270397
+  }
+ },
+ "query_reports": [
+  {
+   "template": "A3_complaint_products",
+   "hints": [],
+   "rewrites": [
+    {
+     "rule": "R1 decorrelate scalar COUNT(*) subquery \u2192 LEFT JOIN + GROUP BY",
+     "sql": "SELECT p.product_id, p.name, COALESCE(d.cnt, 0) AS bad_reviews FROM products AS p LEFT JOIN (SELECT r.product_id AS k, COUNT(*) AS cnt FROM reviews AS r WHERE r.rating <= 2 GROUP BY r.product_id) AS d ON d.k = p.product_id WHERE p.category = %s ORDER BY bad_reviews DESC, p.product_id LIMIT 20",
+     "ms": 87.82203200001959,
+     "equivalent": true
+    }
+   ],
+   "skipped_hints": true,
+   "base_ms": 24268.74815000002
+  },
+  {
+   "template": "A1_revenue_by_category",
+   "hints": [
+    [
+     {
+      "enable_nestloop": false
+     },
+     2755.0018099999534
+    ],
+    [
+     {
+      "enable_hashjoin": false
+     },
+     2704.9388379999755
+    ],
+    [
+     {
+      "enable_mergejoin": false
+     },
+     3154.930888000024
+    ],
+    [
+     {
+      "enable_seqscan": false
+     },
+     3132.664847000001
+    ],
+    [
+     {
+      "jit": false
+     },
+     3594.1743509999924
+    ],
+    [
+     {
+      "enable_nestloop": false,
+      "enable_mergejoin": false
+     },
+     3415.820540000027
+    ]
+   ],
+   "rewrites": [],
+   "skipped_hints": false,
+   "base_ms": 2928.6427419999654
+  }
+ ],
+ "knob_history": [
+  {
+   "trial": 0,
+   "weighted_ms": 425.76245928277,
+   "cfg": {
+    "work_mem": 4,
+    "hash_mem_multiplier": 2.0,
+    "random_page_cost": 4.0,
+    "effective_cache_size": 4096,
+    "max_parallel_workers_per_gather": 2,
+    "jit": true
+   }
+  },
+  {
+   "trial": 1,
+   "weighted_ms": 537.7167820103354,
+   "cfg": {
+    "work_mem": 16,
+    "hash_mem_multiplier": 5.957034758326734,
+    "random_page_cost": 1.9436237428475387,
+    "effective_cache_size": 2557,
+    "max_parallel_workers_per_gather": 2,
+    "jit": true
+   }
+  },
+  {
+   "trial": 2,
+   "weighted_ms": 560.8399406553589,
+   "cfg": {
+    "work_mem": 2,
+    "hash_mem_multiplier": 1.3602704231058091,
+    "random_page_cost": 2.378348546586846,
+    "effective_cache_size": 1080,
+    "max_parallel_workers_per_gather": 1,
+    "jit": true
+   }
+  },
+  {
+   "trial": 3,
+   "weighted_ms": 458.9680580208069,
+   "cfg": {
+    "work_mem": 34,
+    "hash_mem_multiplier": 5.136039721914456,
+    "random_page_cost": 1.1695474588937795,
+    "effective_cache_size": 2787,
+    "max_parallel_workers_per_gather": 0,
+    "jit": true
+   }
+  },
+  {
+   "trial": 4,
+   "weighted_ms": 616.9231492539026,
+   "cfg": {
+    "work_mem": 38,
+    "hash_mem_multiplier": 4.083176023695176,
+    "random_page_cost": 1.5549164415773935,
+    "effective_cache_size": 2717,
+    "max_parallel_workers_per_gather": 2,
+    "jit": true
+   }
+  },
+  {
+   "trial": 5,
+   "weighted_ms": 532.6878753824712,
+   "cfg": {
+    "work_mem": 6,
+    "hash_mem_multiplier": 7.554685549023013,
+    "random_page_cost": 3.930386725171508,
+    "effective_cache_size": 3416,
+    "max_parallel_workers_per_gather": 2,
+    "jit": true
+   }
+  },
+  {
+   "trial": 6,
+   "weighted_ms": 726.3252315396273,
+   "cfg": {
+    "work_mem": 1,
+    "hash_mem_multiplier": 5.573876317664753,
+    "random_page_cost": 2.717738210926508,
+    "effective_cache_size": 1957,
+    "max_parallel_workers_per_gather": 0,
+    "jit": false
+   }
+  },
+  {
+   "trial": 7,
+   "weighted_ms": 490.02099604191307,
+   "cfg": {
+    "work_mem": 3,
+    "hash_mem_multiplier": 3.042549419578028,
+    "random_page_cost": 2.427290558036636,
+    "effective_cache_size": 4785,
+    "max_parallel_workers_per_gather": 1,
+    "jit": true
+   }
+  },
+  {
+   "trial": 8,
+   "weighted_ms": 502.1221264501322,
+   "cfg": {
+    "work_mem": 9,
+    "hash_mem_multiplier": 2.4378724122349125,
+    "random_page_cost": 1.6839982620249123,
+    "effective_cache_size": 2572,
+    "max_parallel_workers_per_gather": 0,
+    "jit": true
+   }
+  },
+  {
+   "trial": 9,
+   "weighted_ms": 472.5932238288634,
+   "cfg": {
+    "work_mem": 41,
+    "hash_mem_multiplier": 6.227223561714032,
+    "random_page_cost": 3.1041694733817167,
+    "effective_cache_size": 3520,
+    "max_parallel_workers_per_gather": 1,
+    "jit": true
+   }
+  },
+  {
+   "trial": 10,
+   "weighted_ms": 503.2761561551838,
+   "cfg": {
+    "work_mem": 1,
+    "hash_mem_multiplier": 7.185772993131628,
+    "random_page_cost": 1.6874384217325105,
+    "effective_cache_size": 3508,
+    "max_parallel_workers_per_gather": 0,
+    "jit": true
+   }
+  },
+  {
+   "trial": 11,
+   "weighted_ms": 520.0892142004176,
+   "cfg": {
+    "work_mem": 8,
+    "hash_mem_multiplier": 1.2998365710082442,
+    "random_page_cost": 1.3885486311997761,
+    "effective_cache_size": 4869,
+    "max_parallel_workers_per_gather": 2,
+    "jit": true
+   }
+  },
+  {
+   "trial": 12,
+   "weighted_ms": 507.03683210952045,
+   "cfg": {
+    "work_mem": 4,
+    "hash_mem_multiplier": 4.34766838277161,
+    "random_page_cost": 3.6691825158737443,
+    "effective_cache_size": 3817,
+    "max_parallel_workers_per_gather": 1,
+    "jit": true
+   }
+  },
+  {
+   "trial": 13,
+   "weighted_ms": 545.2218705679269,
+   "cfg": {
+    "work_mem": 181,
+    "hash_mem_multiplier": 3.429800303576058,
+    "random_page_cost": 3.632812741928466,
+    "effective_cache_size": 4179,
+    "max_parallel_workers_per_gather": 2,
+    "jit": true
+   }
+  }
+ ],
+ "decisions_tuning": [
+  {
+   "id": 1,
+   "agent": "query",
+   "title": "rewrite A3_complaint_products (R1)",
+   "decision": "PASS",
+   "reason": "medium risk \u2014 automatic",
+   "status": "applied",
+   "category": "performance",
+   "risk": "medium",
+   "evidence": {
+    "rule": "R1 decorrelate scalar COUNT(*) subquery \u2192 LEFT JOIN + GROUP BY",
+    "default_ms": 24268.7,
+    "rewritten_ms": 87.8,
+    "equivalent_on_samples": true,
+    "new_sql": "SELECT p.product_id, p.name, COALESCE(d.cnt, 0) AS bad_reviews FROM products AS p LEFT JOIN (SELECT r.product_id AS k, COUNT(*) AS cnt FROM reviews AS r WHERE r.rating <= 2 GROUP BY r.product_id) AS d ON d.k = p.product_id WHERE p.category = %s ORDER BY bad_reviews DESC, p.product_id LIMIT 20",
+    "sandbox": {
+     "measured_gain": 0.996,
+     "before_ms": 24268.7,
+     "after_ms": 87.8
+    }
+   }
+  },
+  {
+   "id": 3,
+   "agent": "index",
+   "title": "index on order_items(order_id)",
+   "decision": "DEFER",
+   "reason": "shares planner with #2 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 27.0,
+    "templates": [
+     "T2_order_detail"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T2_order_detail": 151.6
+     },
+     "after_ms": {
+      "T2_order_detail": 4.4
+     },
+     "measured_gain": 0.971,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.37,
+      0.34,
+      0.35
+     ]
+    }
+   }
+  },
+  {
+   "id": 4,
+   "agent": "index",
+   "title": "index on orders(customer_id, order_date)",
+   "decision": "DEFER",
+   "reason": "shares table:orders with #2 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 13.5,
+    "templates": [
+     "S1_support_lookup",
+     "T1_customer_orders"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "S1_support_lookup": 52.0,
+      "T1_customer_orders": 67.9
+     },
+     "after_ms": {
+      "S1_support_lookup": 0.2,
+      "T1_customer_orders": 3.1
+     },
+     "measured_gain": 0.973,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.32,
+      0.33
+     ]
+    }
+   }
+  },
+  {
+   "id": 5,
+   "agent": "index",
+   "title": "index on reviews(product_id, rating)",
+   "decision": "DEFER",
+   "reason": "shares planner with #2 in this window",
+   "status": "rejected",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.0,
+    "templates": [
+     "A3_complaint_products"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "A3_complaint_products": 86.8
+     },
+     "after_ms": {
+      "A3_complaint_products": 79.6
+     },
+     "measured_gain": 0.083,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.37,
+      0.29
+     ]
+    }
+   }
+  },
+  {
+   "id": 6,
+   "agent": "index",
+   "title": "index on reviews(product_id, review_date)",
+   "decision": "DEFER",
+   "reason": "shares planner with #2 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.7,
+    "templates": [
+     "T3_product_reviews"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T3_product_reviews": 36.7
+     },
+     "after_ms": {
+      "T3_product_reviews": 0.3
+     },
+     "measured_gain": 0.991,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.34,
+      0.5,
+      0.31
+     ]
+    }
+   }
+  },
+  {
+   "id": 2,
+   "agent": "index",
+   "title": "index on orders(order_date)",
+   "decision": "REJECT",
+   "reason": "measured gain on sandbox -517% < 20%",
+   "status": "rejected",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 9.0,
+    "templates": [
+     "S1_support_lookup",
+     "T1_customer_orders"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "S1_support_lookup": 74.4,
+      "T1_customer_orders": 47.6
+     },
+     "after_ms": {
+      "S1_support_lookup": 680.4,
+      "T1_customer_orders": 72.1
+     },
+     "measured_gain": -5.166,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.3,
+      0.38,
+      0.4
+     ]
+    }
+   }
+  },
+  {
+   "id": 4,
+   "agent": "index",
+   "title": "index on orders(customer_id, order_date)",
+   "decision": "DEFER",
+   "reason": "shares planner with #3 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 13.5,
+    "templates": [
+     "S1_support_lookup",
+     "T1_customer_orders"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "S1_support_lookup": 52.0,
+      "T1_customer_orders": 67.9
+     },
+     "after_ms": {
+      "S1_support_lookup": 0.2,
+      "T1_customer_orders": 3.1
+     },
+     "measured_gain": 0.973,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.32,
+      0.33
+     ]
+    }
+   }
+  },
+  {
+   "id": 5,
+   "agent": "index",
+   "title": "index on reviews(product_id, rating)",
+   "decision": "DEFER",
+   "reason": "shares planner with #3 in this window",
+   "status": "rejected",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.0,
+    "templates": [
+     "A3_complaint_products"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "A3_complaint_products": 86.8
+     },
+     "after_ms": {
+      "A3_complaint_products": 79.6
+     },
+     "measured_gain": 0.083,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.37,
+      0.29
+     ]
+    }
+   }
+  },
+  {
+   "id": 6,
+   "agent": "index",
+   "title": "index on reviews(product_id, review_date)",
+   "decision": "DEFER",
+   "reason": "shares planner with #3 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.7,
+    "templates": [
+     "T3_product_reviews"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T3_product_reviews": 36.7
+     },
+     "after_ms": {
+      "T3_product_reviews": 0.3
+     },
+     "measured_gain": 0.991,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.34,
+      0.5,
+      0.31
+     ]
+    }
+   }
+  },
+  {
+   "id": 3,
+   "agent": "index",
+   "title": "index on order_items(order_id)",
+   "decision": "PASS",
+   "reason": "low risk \u2014 automatic",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 27.0,
+    "templates": [
+     "T2_order_detail"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T2_order_detail": 151.6
+     },
+     "after_ms": {
+      "T2_order_detail": 4.4
+     },
+     "measured_gain": 0.971,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.37,
+      0.34,
+      0.35
+     ]
+    }
+   }
+  },
+  {
+   "id": 5,
+   "agent": "index",
+   "title": "index on reviews(product_id, rating)",
+   "decision": "DEFER",
+   "reason": "shares planner with #4 in this window",
+   "status": "rejected",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.0,
+    "templates": [
+     "A3_complaint_products"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "A3_complaint_products": 86.8
+     },
+     "after_ms": {
+      "A3_complaint_products": 79.6
+     },
+     "measured_gain": 0.083,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.37,
+      0.29
+     ]
+    }
+   }
+  },
+  {
+   "id": 6,
+   "agent": "index",
+   "title": "index on reviews(product_id, review_date)",
+   "decision": "DEFER",
+   "reason": "shares planner with #4 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.7,
+    "templates": [
+     "T3_product_reviews"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T3_product_reviews": 36.7
+     },
+     "after_ms": {
+      "T3_product_reviews": 0.3
+     },
+     "measured_gain": 0.991,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.34,
+      0.5,
+      0.31
+     ]
+    }
+   }
+  },
+  {
+   "id": 4,
+   "agent": "index",
+   "title": "index on orders(customer_id, order_date)",
+   "decision": "PASS",
+   "reason": "low risk \u2014 automatic",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 13.5,
+    "templates": [
+     "S1_support_lookup",
+     "T1_customer_orders"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "S1_support_lookup": 52.0,
+      "T1_customer_orders": 67.9
+     },
+     "after_ms": {
+      "S1_support_lookup": 0.2,
+      "T1_customer_orders": 3.1
+     },
+     "measured_gain": 0.973,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.32,
+      0.33
+     ]
+    }
+   }
+  },
+  {
+   "id": 6,
+   "agent": "index",
+   "title": "index on reviews(product_id, review_date)",
+   "decision": "DEFER",
+   "reason": "shares table:reviews with #5 in this window",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.7,
+    "templates": [
+     "T3_product_reviews"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T3_product_reviews": 36.7
+     },
+     "after_ms": {
+      "T3_product_reviews": 0.3
+     },
+     "measured_gain": 0.991,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.34,
+      0.5,
+      0.31
+     ]
+    }
+   }
+  },
+  {
+   "id": 5,
+   "agent": "index",
+   "title": "index on reviews(product_id, rating)",
+   "decision": "REJECT",
+   "reason": "measured gain on sandbox 8% < 20%",
+   "status": "rejected",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.0,
+    "templates": [
+     "A3_complaint_products"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "A3_complaint_products": 86.8
+     },
+     "after_ms": {
+      "A3_complaint_products": 79.6
+     },
+     "measured_gain": 0.083,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.32,
+      0.37,
+      0.29
+     ]
+    }
+   }
+  },
+  {
+   "id": 6,
+   "agent": "index",
+   "title": "index on reviews(product_id, review_date)",
+   "decision": "PASS",
+   "reason": "low risk \u2014 automatic",
+   "status": "applied",
+   "category": "performance",
+   "risk": "low",
+   "evidence": {
+    "what_if_size_mb": 6.7,
+    "templates": [
+     "T3_product_reviews"
+    ],
+    "sandbox": {
+     "before_ms": {
+      "T3_product_reviews": 36.7
+     },
+     "after_ms": {
+      "T3_product_reviews": 0.3
+     },
+     "measured_gain": 0.991,
+     "write_overhead": 0.0,
+     "write_ms": [
+      0.34,
+      0.5,
+      0.31
+     ]
+    }
+   }
+  }
+ ],
+ "after": {
+  "stats": {
+   "T1_customer_orders": {
+    "n": 8523,
+    "mean": 0.7286502849771763,
+    "p50": 0.5390644073486328,
+    "p95": 1.5981197357177734
+   },
+   "T5_product_search": {
+    "n": 2739,
+    "mean": 0.5064546822544083,
+    "p50": 0.4258155822753906,
+    "p95": 0.8211135864257812
+   },
+   "T4_place_order": {
+    "n": 4192,
+    "mean": 2.7600001287824325,
+    "p50": 2.1059513092041016,
+    "p95": 6.485939025878906
+   },
+   "T6_product_lookup": {
+    "n": 1417,
+    "mean": 0.6136034438537726,
+    "p50": 0.4413127899169922,
+    "p95": 1.398324966430664
+   },
+   "T2_order_detail": {
+    "n": 7085,
+    "mean": 0.8928761990371521,
+    "p50": 0.701904296875,
+    "p95": 2.0122528076171875
+   },
+   "T3_product_reviews": {
+    "n": 4221,
+    "mean": 0.6765956083368674,
+    "p50": 0.5033016204833984,
+    "p95": 1.4650821685791016
+   },
+   "S1_support_lookup": {
+    "n": 396,
+    "mean": 0.8470054828759396,
+    "p50": 0.6496906280517578,
+    "p95": 2.2325515747070312
+   },
+   "A2_top_customers_city": {
+    "n": 115,
+    "mean": 46.262382424396016,
+    "p50": 41.90468788146973,
+    "p95": 76.42149925231934
+   },
+   "A1_revenue_by_category": {
+    "n": 126,
+    "mean": 686.2378744851975,
+    "p50": 649.8055458068848,
+    "p95": 1032.9279899597168
+   },
+   "A3_complaint_products": {
+    "n": 49,
+    "mean": 27.569347498368245,
+    "p50": 26.324748992919922,
+    "p95": 36.5605354309082
+   }
+  },
+  "tps": 240.50833333333333,
+  "indexes": [
+   "CREATE INDEX mada_order_items_order_id ON public.order_items USING btree (order_id)",
+   "CREATE INDEX mada_orders_customer_id_order_date ON public.orders USING btree (customer_id, order_date)",
+   "CREATE INDEX mada_reviews_product_id_review_date ON public.reviews USING btree (product_id, review_date)"
+  ],
+  "settings": {
+   "effective_cache_size": "5242888kB",
+   "hash_mem_multiplier": "2",
+   "jit": "on",
+   "max_parallel_workers_per_gather": "2",
+   "random_page_cost": "4",
+   "work_mem": "4096kB"
+  },
+  "registry": {
+   "hints": [],
+   "rewrites": [
+    "A3_complaint_products"
+   ]
+  }
+ },
+ "security_metrics": {
+  "random_split": {
+   "precision": 1.0,
+   "recall": 1.0,
+   "f1": 1.0,
+   "cm": [
+    [
+     442,
+     0
+    ],
+    [
+     0,
+     218
+    ]
+   ],
+   "n_test": 660
+  },
+  "unseen_family": {
+   "family": "time_based",
+   "precision": 1.0,
+   "recall": 0.7928571428571428,
+   "f1": 0.8844621513944223,
+   "n_test": 582
+  }
+ },
+ "faults": [
+  {
+   "key": "F1",
+   "name": "Missing index",
+   "expected": "missing_index",
+   "inject_t": 1793208291.7036638,
+   "detect_t": 1793208296.5626252,
+   "diagnosed": [
+    "missing_index",
+    "cpu_saturation",
+    "table_bloat"
+   ],
+   "top1": true,
+   "top3": true,
+   "facts": {
+    "missing": [
+     "mada_orders_customer_id_order_date"
+    ],
+    "sandbox": {}
+   },
+   "mitigate_t": 1793208297.9381142,
+   "end_t": 1793208324.3293617
+  },
+  {
+   "key": "F2",
+   "name": "Bad configuration",
+   "expected": "work_mem_spill",
+   "inject_t": 1793208349.3601456,
+   "detect_t": 1793208361.5205605,
+   "diagnosed": [
+    "work_mem_spill",
+    "lock_contention",
+    "missing_index"
+   ],
+   "top1": true,
+   "top3": true,
+   "facts": {
+    "work_mem": "64kB"
+   },
+   "mitigate_t": 1793208361.5524888,
+   "end_t": 1793208387.87143
+  },
+  {
+   "key": "F4",
+   "name": "Lock contention",
+   "expected": "lock_contention",
+   "inject_t": 1793208412.8837779,
+   "detect_t": 1793208418.9402556,
+   "diagnosed": [
+    "lock_contention",
+    "work_mem_spill",
+    "missing_index"
+   ],
+   "top1": true,
+   "top3": true,
+   "facts": {
+    "blocker_pid": 18380,
+    "user": "app_user",
+    "xact_age_s": 6.1,
+    "query": "SELECT product_id FROM products WHERE product_id BETWEEN 1 A",
+    "waiters": 5,
+    "sandbox": {}
+   },
+   "mitigate_t": 1793208418.9843218,
+   "end_t": 1793208445.2739067
+  },
+  {
+   "key": "F5",
+   "name": "Table bloat",
+   "expected": "table_bloat",
+   "inject_t": 1793208470.6111364,
+   "detect_t": 1793208478.7920911,
+   "diagnosed": [
+    "table_bloat",
+    "cpu_saturation",
+    "lock_contention"
+   ],
+   "top1": true,
+   "top3": true,
+   "facts": {
+    "table": "orders",
+    "dead": 315208,
+    "live": 316745,
+    "autovacuum_off": true,
+    "sandbox": {}
+   },
+   "mitigate_t": 1793208479.3490567,
+   "end_t": 1793208505.6574423
+  },
+  {
+   "key": "F8",
+   "name": "Connection storm",
+   "expected": "connection_storm",
+   "inject_t": 1793208530.674887,
+   "detect_t": 1793208534.7327173,
+   "diagnosed": [
+    "connection_storm",
+    "lock_contention",
+    "work_mem_spill"
+   ],
+   "top1": true,
+   "top3": true,
+   "facts": {
+    "user": "app_user",
+    "idle": 84,
+    "total": 85,
+    "sandbox": {}
+   },
+   "mitigate_t": 1793208534.8108833,
+   "end_t": 1793208561.1687703
+  },
+  {
+   "key": "F9",
+   "name": "SQL injection",
+   "expected": "sql_injection",
+   "inject_t": 1793208586.2592149,
+   "detect_t": 1793208588.2740552,
+   "diagnosed": [
+    "sql_injection"
+   ],
+   "top1": true,
+   "top3": true,
+   "mitigate_t": 1793208588.2929103,
+   "end_t": 1793208614.5999365
+  },
+  {
+   "key": "F10",
+   "name": "Abnormal access",
+   "expected": "abnormal_access",
+   "inject_t": 1793208639.741719,
+   "detect_t": 1793208641.7587028,
+   "diagnosed": [
+    "abnormal_access"
+   ],
+   "top1": true,
+   "top3": true,
+   "mitigate_t": 1793208641.788054,
+   "end_t": 1793208668.1856582
+  }
+ ],
+ "gate": {
+  "on": [
+   {
+    "title": "plan hint for A1: disable hash joins",
+    "decision": "REJECT",
+    "reason": "measured gain on sandbox -4% < 20%",
+    "status": "rejected"
+   },
+   {
+    "title": "configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)",
+    "decision": "REJECT",
+    "reason": "measured gain on sandbox -11% < 20%",
+    "status": "rejected"
+   },
+   {
+    "title": "rewrite A3 (faulty rule drops the rating filter)",
+    "decision": "REJECT",
+    "reason": "rewrite returns different results",
+    "status": "rejected"
+   },
+   {
+    "title": "configuration: random_page_cost=50",
+    "decision": "REJECT",
+    "reason": "random_page_cost=50 is outside the documented safe range 1.1\u20134.0",
+    "status": "rejected"
+   }
+  ],
+  "off": [
+   {
+    "title": "plan hint for A1: disable hash joins",
+    "decision": "PASS",
+    "reason": "gate disabled (ablation run)",
+    "status": "applied"
+   },
+   {
+    "title": "configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)",
+    "decision": "PASS",
+    "reason": "gate disabled (ablation run)",
+    "status": "applied"
+   },
+   {
+    "title": "rewrite A3 (faulty rule drops the rating filter)",
+    "decision": "PASS",
+    "reason": "gate disabled (ablation run)",
+    "status": "applied"
+   },
+   {
+    "title": "configuration: random_page_cost=50",
+    "decision": "PASS",
+    "reason": "gate disabled (ablation run)",
+    "status": "applied"
+   }
+  ]
+ },
+ "events": [
+  {
+   "t": 1793207916.9729846,
+   "kind": "proposal",
+   "agent": "query",
+   "msg": "rewrite A3_complaint_products (R1)",
+   "gain": 0.9963812706177834
+  },
+  {
+   "t": 1793207980.0460129,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#1 PASS: medium risk \u2014 automatic",
+   "pid": 1,
+   "title": "rewrite A3_complaint_products (R1)"
+  },
+  {
+   "t": 1793207980.1621745,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#1 applied: rewrite A3_complaint_products (R1)",
+   "pid": 1
+  },
+  {
+   "t": 1793208054.3206177,
+   "kind": "proposal",
+   "agent": "index",
+   "msg": "index on orders(order_date)",
+   "templates": [
+    "S1_support_lookup",
+    "T1_customer_orders"
+   ]
+  },
+  {
+   "t": 1793208054.3619022,
+   "kind": "proposal",
+   "agent": "index",
+   "msg": "index on order_items(order_id)",
+   "templates": [
+    "T2_order_detail"
+   ]
+  },
+  {
+   "t": 1793208054.429519,
+   "kind": "proposal",
+   "agent": "index",
+   "msg": "index on orders(customer_id, order_date)",
+   "templates": [
+    "S1_support_lookup",
+    "T1_customer_orders"
+   ]
+  },
+  {
+   "t": 1793208054.4389997,
+   "kind": "proposal",
+   "agent": "index",
+   "msg": "index on reviews(product_id, rating)",
+   "templates": [
+    "A3_complaint_products"
+   ]
+  },
+  {
+   "t": 1793208054.4582913,
+   "kind": "proposal",
+   "agent": "index",
+   "msg": "index on reviews(product_id, review_date)",
+   "templates": [
+    "T3_product_reviews"
+   ]
+  },
+  {
+   "t": 1793208071.7223136,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#3 deferred: shares planner with #2 in this window",
+   "pid": 3
+  },
+  {
+   "t": 1793208071.7239177,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#4 deferred: shares table:orders with #2 in this window",
+   "pid": 4
+  },
+  {
+   "t": 1793208071.7251217,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#5 deferred: shares planner with #2 in this window",
+   "pid": 5
+  },
+  {
+   "t": 1793208071.7268374,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#6 deferred: shares planner with #2 in this window",
+   "pid": 6
+  },
+  {
+   "t": 1793208071.728192,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#2 REJECT: measured gain on sandbox -517% < 20%",
+   "pid": 2,
+   "title": "index on orders(order_date)"
+  },
+  {
+   "t": 1793208071.746289,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#4 deferred: shares planner with #3 in this window",
+   "pid": 4
+  },
+  {
+   "t": 1793208071.7475607,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#5 deferred: shares planner with #3 in this window",
+   "pid": 5
+  },
+  {
+   "t": 1793208071.7486656,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#6 deferred: shares planner with #3 in this window",
+   "pid": 6
+  },
+  {
+   "t": 1793208071.7497697,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#3 PASS: low risk \u2014 automatic",
+   "pid": 3,
+   "title": "index on order_items(order_id)"
+  },
+  {
+   "t": 1793208074.4605384,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#3 applied: index on order_items(order_id)",
+   "pid": 3
+  },
+  {
+   "t": 1793208086.4683661,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#5 deferred: shares planner with #4 in this window",
+   "pid": 5
+  },
+  {
+   "t": 1793208086.4694934,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#6 deferred: shares planner with #4 in this window",
+   "pid": 6
+  },
+  {
+   "t": 1793208086.4708943,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#4 PASS: low risk \u2014 automatic",
+   "pid": 4,
+   "title": "index on orders(customer_id, order_date)"
+  },
+  {
+   "t": 1793208089.0501513,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#4 applied: index on orders(customer_id, order_date)",
+   "pid": 4
+  },
+  {
+   "t": 1793208101.059329,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#6 deferred: shares table:reviews with #5 in this window",
+   "pid": 6
+  },
+  {
+   "t": 1793208101.060306,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#5 REJECT: measured gain on sandbox 8% < 20%",
+   "pid": 5,
+   "title": "index on reviews(product_id, rating)"
+  },
+  {
+   "t": 1793208101.0624747,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#6 PASS: low risk \u2014 automatic",
+   "pid": 6,
+   "title": "index on reviews(product_id, review_date)"
+  },
+  {
+   "t": 1793208101.262159,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#6 applied: index on reviews(product_id, review_date)",
+   "pid": 6
+  },
+  {
+   "t": 1793208275.6885889,
+   "kind": "baseline",
+   "agent": "monitor",
+   "msg": "baseline learned from 59 ticks over 15 metrics"
+  },
+  {
+   "t": 1793208296.5626183,
+   "kind": "alert",
+   "agent": "monitor",
+   "msg": "anomaly: seq_tup:orders/s z=50.9, p95_oltp_ms z=31.3, cpu_pct z=4.4",
+   "metrics": {
+    "seq_tup:orders/s": 50.94430503479031,
+    "p95_oltp_ms": 31.336141844927255,
+    "cpu_pct": 4.422764841377057
+   },
+   "iso": -0.06360784946033715
+  },
+  {
+   "t": 1793208296.6157045,
+   "kind": "diagnosis",
+   "agent": "diagnosis",
+   "msg": "missing_index: An index the workload depends on is missing, so lookups fall back to sequential scans of a large table.",
+   "ranked": [
+    "missing_index",
+    "cpu_saturation",
+    "table_bloat"
+   ],
+   "facts": {
+    "missing": [
+     "mada_orders_customer_id_order_date"
+    ],
+    "sandbox": {}
+   }
+  },
+  {
+   "t": 1793208296.6176867,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#7 PASS: low risk \u2014 automatic",
+   "pid": 7,
+   "title": "recreate missing index mada_orders_customer_id_order_date"
+  },
+  {
+   "t": 1793208297.938118,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#7 applied: recreate missing index mada_orders_customer_id_order_date",
+   "pid": 7
+  },
+  {
+   "t": 1793208361.5205538,
+   "kind": "alert",
+   "agent": "monitor",
+   "msg": "anomaly: temp_bytes/s z=7.7",
+   "metrics": {
+    "temp_bytes/s": 7.70845153883812
+   },
+   "iso": -0.04240089605752262
+  },
+  {
+   "t": 1793208361.545397,
+   "kind": "diagnosis",
+   "agent": "diagnosis",
+   "msg": "work_mem_spill: Sorts and hash joins no longer fit in work_mem and spill to temporary files, so analytical queries slow down.",
+   "ranked": [
+    "work_mem_spill",
+    "lock_contention",
+    "missing_index"
+   ],
+   "facts": {
+    "work_mem": "64kB"
+   }
+  },
+  {
+   "t": 1793208361.5466754,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#8 PASS: low risk \u2014 automatic",
+   "pid": 8,
+   "title": "restore work_mem from 64kB to 4MB"
+  },
+  {
+   "t": 1793208361.5524917,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#8 applied: restore work_mem from 64kB to 4MB",
+   "pid": 8
+  },
+  {
+   "t": 1793208418.9402466,
+   "kind": "alert",
+   "agent": "monitor",
+   "msg": "anomaly: lock_waiting z=5.0, locks_not_granted z=5.0",
+   "metrics": {
+    "lock_waiting": 5.0,
+    "locks_not_granted": 5.0
+   },
+   "iso": -0.0031708781372388195
+  },
+  {
+   "t": 1793208418.9722564,
+   "kind": "diagnosis",
+   "agent": "diagnosis",
+   "msg": "lock_contention: Sessions are queued on row locks held by a long-running transaction; order placement waits until it ends.",
+   "ranked": [
+    "lock_contention",
+    "work_mem_spill",
+    "missing_index"
+   ],
+   "facts": {
+    "blocker_pid": 18380,
+    "user": "app_user",
+    "xact_age_s": 6.1,
+    "query": "SELECT product_id FROM products WHERE product_id BETWEEN 1 A",
+    "waiters": 5,
+    "sandbox": {}
+   }
+  },
+  {
+   "t": 1793208418.9747849,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#9 PASS: high risk \u2014 approved by operator",
+   "pid": 9,
+   "title": "end blocking session pid 18380 (app_user, open 6.1 s)"
+  },
+  {
+   "t": 1793208418.9843245,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#9 applied: end blocking session pid 18380 (app_user, open 6.1 s)",
+   "pid": 9
+  },
+  {
+   "t": 1793208478.7920854,
+   "kind": "alert",
+   "agent": "monitor",
+   "msg": "anomaly: dead:orders z=5445.4",
+   "metrics": {
+    "dead:orders": 5445.379973047401
+   },
+   "iso": -0.04845420797746047
+  },
+  {
+   "t": 1793208478.8284683,
+   "kind": "diagnosis",
+   "agent": "diagnosis",
+   "msg": "table_bloat: Dead row versions are piling up because vacuum is not running, so every scan reads far more pages than live rows.",
+   "ranked": [
+    "table_bloat",
+    "cpu_saturation",
+    "lock_contention"
+   ],
+   "facts": {
+    "table": "orders",
+    "dead": 315208,
+    "live": 316745,
+    "autovacuum_off": true,
+    "sandbox": {}
+   }
+  },
+  {
+   "t": 1793208478.8357832,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#10 PASS: medium risk \u2014 automatic",
+   "pid": 10,
+   "title": "VACUUM (ANALYZE) orders and re-enable autovacuum"
+  },
+  {
+   "t": 1793208479.3490603,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#10 applied: VACUUM (ANALYZE) orders and re-enable autovacuum",
+   "pid": 10
+  },
+  {
+   "t": 1793208534.732711,
+   "kind": "alert",
+   "agent": "monitor",
+   "msg": "anomaly: idle z=75.6, connections z=59.3",
+   "metrics": {
+    "idle": 75.59294871794873,
+    "connections": 59.25925925925927
+   },
+   "iso": 0.04068188440589693
+  },
+  {
+   "t": 1793208534.7863882,
+   "kind": "diagnosis",
+   "agent": "diagnosis",
+   "msg": "connection_storm: A burst of client connections, most of them idle, is consuming connection slots and memory.",
+   "ranked": [
+    "connection_storm",
+    "lock_contention",
+    "work_mem_spill"
+   ],
+   "facts": {
+    "user": "app_user",
+    "idle": 84,
+    "total": 85,
+    "sandbox": {}
+   }
+  },
+  {
+   "t": 1793208534.7930043,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#11 PASS: high risk \u2014 approved by operator",
+   "pid": 11,
+   "title": "end 84 idle sessions of role app_user"
+  },
+  {
+   "t": 1793208534.8108864,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#11 applied: end 84 idle sessions of role app_user",
+   "pid": 11
+  },
+  {
+   "t": 1793208588.2821796,
+   "kind": "security",
+   "agent": "security",
+   "msg": "SQL injection detected (score 0.96): SELECT product_id, name, price FROM products WHERE name ILIKE '%x%' UNION SELECT customer_",
+   "n": 2
+  },
+  {
+   "t": 1793208588.2872317,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#12 PASS: high risk \u2014 approved by operator",
+   "pid": 12,
+   "title": "end session(s) [18923] sending injected SQL (2 statements flagged)"
+  },
+  {
+   "t": 1793208588.2929132,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#12 applied: end session(s) [18923] sending injected SQL (2 statements flagged)",
+   "pid": 12
+  },
+  {
+   "t": 1793208641.766835,
+   "kind": "security",
+   "agent": "security",
+   "msg": "abnormal access: role support read ['payments'] outside its profile (1 statements)"
+  },
+  {
+   "t": 1793208641.7712798,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#13 PASS: high risk \u2014 approved by operator",
+   "pid": 13,
+   "title": "revoke support's access to payments and end its sessions"
+  },
+  {
+   "t": 1793208641.7880569,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#13 applied: revoke support's access to payments and end its sessions",
+   "pid": 13
+  },
+  {
+   "t": 1793208692.124833,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#14 REJECT: measured gain on sandbox -4% < 20%",
+   "pid": 14,
+   "title": "plan hint for A1: disable hash joins"
+  },
+  {
+   "t": 1793208694.9504204,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#15 REJECT: measured gain on sandbox -11% < 20%",
+   "pid": 15,
+   "title": "configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)"
+  },
+  {
+   "t": 1793208694.9523876,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#16 REJECT: rewrite returns different results",
+   "pid": 16,
+   "title": "rewrite A3 (faulty rule drops the rating filter)"
+  },
+  {
+   "t": 1793208694.9541602,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#17 REJECT: random_page_cost=50 is outside the documented safe range 1.1\u20134.0",
+   "pid": 17,
+   "title": "configuration: random_page_cost=50"
+  },
+  {
+   "t": 1793208707.7560158,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#18 PASS: gate disabled (ablation run)",
+   "pid": 18,
+   "title": "plan hint for A1: disable hash joins"
+  },
+  {
+   "t": 1793208707.7688267,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#18 applied: plan hint for A1: disable hash joins",
+   "pid": 18
+  },
+  {
+   "t": 1793208727.8036034,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#19 PASS: gate disabled (ablation run)",
+   "pid": 19,
+   "title": "configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)"
+  },
+  {
+   "t": 1793208727.8115156,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#19 applied: configuration: work_mem=1MB, hash_mem_multiplier=1.00 (save memory)",
+   "pid": 19
+  },
+  {
+   "t": 1793208747.855769,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#20 PASS: gate disabled (ablation run)",
+   "pid": 20,
+   "title": "rewrite A3 (faulty rule drops the rating filter)"
+  },
+  {
+   "t": 1793208747.8726459,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#20 applied: rewrite A3 (faulty rule drops the rating filter)",
+   "pid": 20
+  },
+  {
+   "t": 1793208767.9509852,
+   "kind": "decision",
+   "agent": "coordinator",
+   "msg": "#21 PASS: gate disabled (ablation run)",
+   "pid": 21,
+   "title": "configuration: random_page_cost=50"
+  },
+  {
+   "t": 1793208767.9727478,
+   "kind": "applied",
+   "agent": "coordinator",
+   "msg": "#21 applied: configuration: random_page_cost=50",
+   "pid": 21
+  }
+ ]
+}
