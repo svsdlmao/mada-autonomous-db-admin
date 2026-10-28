@@ -23,6 +23,9 @@ This folder contains the full prototype and a **live web dashboard** for demonst
 | SQL-injection classifier | precision 1.000, recall 1.000; 0.793 recall on an unseen attack family |
 | Safety gate | gate on: 4 of 4 harmful proposals rejected; gate off: 4 of 4 reached production |
 
+**How it works, file by file:** [`docs/PROJECT_GUIDE.md`](docs/PROJECT_GUIDE.md) (also as PDF) explains where each part of the code is,
+what the AI in each agent is, how every filter and safety check works, and answers likely review questions.
+
 Full write-up: `docs/reviews/FinalReview_MADA_24BCE0416.pdf` (report) and `.pptx` (slides). Review I and II
 documents and slides are in the same folder. Raw data: `results/results.json`, full console log: `results/run_log.txt`.
 
@@ -144,6 +147,7 @@ run reported in the Final Review.
 | `demo/` | Live dashboard (Flask server + HTML/JS) |
 | `run_experiments.py` | Scripted evaluation used for the report |
 | `results/`, `screenshots/` | Output of the final evaluation run |
+| `docs/PROJECT_GUIDE.md` / `.pdf` | Project guide: code map, the AI in each agent, every filter and safety check, review Q&A |
 | `docs/reviews/` | Review I, Review II and Final Review documents (Word + PDF) and slides |
 
 ## 7. Settings (environment variables)
